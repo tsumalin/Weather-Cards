@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Report4</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .wrap {
+            width: 100%;
+            /* height: 100vh; */
+            /* 設height的話，下方w-card在flex-wrap之後中間會空一大行 */
+            background-color: white;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        nav {
+            width: 100%;
+            height: 100px;
+            background-color: lightpink;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button {
+            width: 80px;
+            height: 50px;
+            font-size: 20px;
+            border-radius: 20px;
+            border: none;
+            margin: 50px;
+            
+        }
+
+        button:hover {
+            cursor: pointer;
+            transform: scale(1.1);
+            font-weight: bold;
+        }
+
+
+        .w-card {
+            width: 450px;
+            height: 180px;
+            background-color: #fff;
+            box-shadow: -2px -2px 30px rgb(224, 223, 223),
+                        2px 2px 20px;
+            border-radius: 30px;
+            display: flex;
+            margin: 0px 50px 50px 0px;
+            border: none;
+            position: relative;
+            
+        }
+
+        .w-card:hover {
+            transform: scale(1.1);
+            /* transform: translate(0.5); */
+            cursor: pointer;
+        }
+
+        .left-side {
+            width: 60%;
+            padding: 5px;
+        }
+
+        img {
+            width: 180px;
+            height: 150px;
+            position: absolute;
+            top: -30px;
+            left: -30px;
+        }
+
+        .sunny {
+            width: 280px;
+            height: 230px;
+        }
+
+        .temp-box {
+            display: inline-block;
+            position: absolute;
+            top: 70px;
+            left: 60px;
+        }
+
+        .degree {
+            font-size: 50px;
+            float:left;
+        }
+
+        .celsius {
+            font-size: 20px;
+            float: left;
+        }
+
+        .right-side {
+            width: 55%;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;        
+        }
+
+        .city, .feeling, .possibility {
+            border-bottom: 1px solid darkgrey;
+            margin: 15px;
+            
+        }
+
+        
+
+
+    </style>
+</head>
+<body>
+    <nav>
+        <button class="btn all_area" onclick="filter('all_area')">全台</button>
+        <button class="btn north" onclick="filter(north)">北部</button>
+        <button class="btn central" onclick="filter(central)">中部</button>
+        <button class="btn south" onclick="filter(south)">南部</button>
+        <button class="btn east" onclick="filter(east)">東部</button>
+        <button class="btn island" onclick="filter(island)">離島</button>
+    </nav>
+    <div class="wrap">
+    </div>
+    <script>
+
+            const container = document.querySelector('.wrap')
+            const btn = document.querySelectorAll('.btn')
+            const north = ['臺北市','新北市','基隆市','新竹市','桃園市','新竹縣','宜蘭縣']
+            const central = ['苗栗縣','臺中市','彰化縣','南投縣','雲林縣']
+            const south = ['嘉義縣','嘉義市','臺南市','高雄市','屏東縣','澎湖縣']
+            const east = ['花蓮縣','花蓮縣','臺東縣']
+            const island = ['金門縣','連江縣']
+
+            fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-AA300EC1-31BA-465E-B669-6CA2C320A195')
+            .then(function (response) {  
+                return response.json();         
+            })
+            .then(function (weather) {
+                console.log(weather.records.location[11].locationName);
+                console.log(weather);
+                
+                var locations = weather.records.location
+
+                    locations.forEach(element => {
+                    let location = element.locationName
+                    let minTemp = element.weatherElement[2].time[0].parameter.parameterName
+                    let maxTemp = element.weatherElement[4].time[0].parameter.parameterName
+                    let rain = element.weatherElement[1].time[0].parameter.parameterName
+                    let feel = element.weatherElement[3].time[0].parameter.parameterName
+                    // 如果降雨機率小於25% 就是晴天，如果小於等於50% 陰天，如果大於50% 下雨天
+                    let imgPath
+                    if (rain < 25) {
+                        imgPath = './weatherIcon/clear-day.svg'
+                    }else if (rain <= 50) {
+                        imgPath = './weatherIcon/cloudy-3-day.svg'
+                    }else {
+                        imgPath = './weatherIcon/rainy-2-day.svg'
+                    }
+                    container.innerHTML += `
+                    <div class="w-card" data-city=${location}>
+                    <div class="left-side">
+                        <img src="${imgPath}" alt="" class="sunny">
+                        <div class="temp-box">
+                            <div class="degree">${minTemp} ~ ${maxTemp}</div>
+                            <div class="celsius">℃</div>
+                        </div>
+                    </div>
+                    <div class="right-side">
+                        <div class="city">${location}</div>
+                        <div class="possibility">降雨機率：${rain}%</div>
+                        <div class="feeling">體感：${feel}</div>
+                    </div>
+                    </div>`
+                });
+            })
+
+            // 把所有縣市印出來，然後把不想看到的加上 display:none;
+            function filter(areas) {
+                var allcity = document.querySelectorAll('.w-card')
+                // 將所有城市一筆一筆調出來
+                allcity.forEach(city => {
+                    // 如果條件是all(全部)，就直接給block
+                    if(areas == 'all_area') {
+                        city.style.display = 'flex'
+                    }else {
+                        // 先假設所有城市都不顯示
+                    city.style.display = 'none'
+                    areas.forEach(areas => {
+                        // 將條件拿出來比較，如果條件中的任何一個縣市有符合就加上flex顯示出來
+                        if (city.dataset.city == areas) {
+                            city.style.display = 'flex'
+                        }
+                    });  
+                    }
+                                      
+                })
+            }
+            // 根據按下的按鈕選定條件，紙漿符合條件的縣市做出卡片
+
+    </script>
+</body>
+</html>
